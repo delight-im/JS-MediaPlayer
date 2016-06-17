@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<!--
+ * Copyright (c) delight.im <info@delight.im>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+	<form>
+		<input type="file" accept="video/*" id="video-input">
+	</form>
+	<video id="video-output" controls="controls"></video>
+
+	<script src="../src/MediaPlayer.js"></script>
+	<script>
+		var player;
+		var videoInput = document.getElementById("video-input");
+
+		videoInput.addEventListener("change", function () {
+			console.log("Starting ...");
+
+			var videoInputFile = videoInput.files[0];
+			console.assert(videoInputFile instanceof File, "Video input file must be a `File` instance");
+
+			player = new MediaPlayer();
+			console.assert(player instanceof MediaPlayer, "Instances must be created using the constructor");
+
+			try {
+				player.setTargetElement(document.getElementById("video-output"));
+			}
+			catch (e) {
+				console.assert(false, "Setting a valid target element must not throw an exception");
+			}
+
+			try {
+				player.load(videoInputFile);
+			}
+			catch (e) {
+				console.assert(false, "Loading a valid input file must not throw an exception");
+			}
+			console.assert(player.isPlaying() === false, "Instance should not be playing initially");
+			console.assert(player.hasEnded() === false, "Playback should not have finished initially");
+			console.assert(player.getElapsedTime() === 0, "Elapsed playback time should be zero seconds before being started");
+
+			player.play();
+			console.assert(player.isPlaying() === true, "Instance should be playing after being started");
+
+			console.log("Waiting ...");
+
+			setTimeout(function () {
+				console.assert(player.getElapsedTime() > 0, "Elapsed playback time should be greater than zero seconds after being started");
+				console.assert(player.getTotalTime() > 0, "Total playback time should be greater than zero seconds");
+
+				player.togglePlaying();
+				console.assert(player.isPlaying() === false, "Toggling playback should work in both ways");
+
+				player.togglePlaying();
+				console.assert(player.isPlaying() === true, "Toggling playback should work in both ways");
+
+				player.pause();
+				console.assert(player.isPlaying() === false, "Instance should not be playing after being paused");
+
+				player.resume();
+				console.assert(player.isPlaying() === true, "Instance should be playing after being resumed");
+				console.assert(player.hasEnded() === false, "Playback should not have finished in the meantime");
+
+				player.stop();
+				console.assert(player.isPlaying() === false, "Instance should not be playing after being stopped");
+				console.assert(player.getElapsedTime() === 0, "Elapsed time should be zero seconds after being stopped");
+
+				player.play();
+				console.assert(player.isPlaying() === true, "Instance should be playing after being started");
+
+				console.assert(player.getSpeed() === 1, "The playback speed should be normal speed initially");
+
+				player.increaseSpeed(0.5);
+				console.assert(player.getSpeed() === 1.5, "The playback speed should be as high as requested after increasing it");
+
+				player.decreaseSpeed(1);
+				console.assert(player.getSpeed() === 0.5, "The playback speed should be as low as requested after decreasing it");
+
+				console.assert(player.getVolume() === 1, "The playback volume should be full volume initially");
+
+				player.decreaseVolume(0.4);
+				console.assert(player.getVolume() === 0.6, "The playback volume should be as low as requested after decreasing it");
+
+				player.increaseVolume(0.2);
+				console.assert(player.getVolume() === 0.8, "The playback volume should be as high as requested after increasing it");
+
+				player.seek(5);
+				console.assert(player.getElapsedTime() >= 5, "The elapsed playback time should have advanced after seeking");
+				console.assert(player.getElapsedTime() < player.getTotalTime(), "The elapsed playback time should be less than the total playback time");
+				console.assert(player.getRemainingTime() < player.getTotalTime(), "The remaining playback time should be less than the total playback time");
+				console.assert((player.getElapsedTime() + player.getRemainingTime() - 1) < player.getTotalTime(), "The sum of the elapsed and the remaining playback time should be equal to the total playback time");
+				console.assert((player.getElapsedTime() + player.getRemainingTime() + 1) > player.getTotalTime(), "The sum of the elapsed and the remaining playback time should be equal to the total playback time");
+				console.assert(player.getProgress() > 0, "The relative progress should be between 0 and 1");
+				console.assert(player.getProgress() < 1, "The relative progress should be between 0 and 1");
+
+				player.seekTo(65);
+				console.assert((player.getElapsedTime() - 1) < 65, "The elapsed playback time should have advanced to the requested position after seeking");
+				console.assert((player.getElapsedTime() + 1) > 65, "The elapsed playback time should have advanced to the requested position after seeking");
+
+				console.log("Finished");
+			}, 1000);
+		});
+	</script>
+</body>
+</html>
